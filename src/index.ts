@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { GRINOracle } from './GRINOracle.js';
 
-export { Add };
+export { GRINOracle };
