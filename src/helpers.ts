@@ -2,13 +2,23 @@ import bech32 from 'bech32-buffer';
 
 import { Field, Signature, PrivateKey, Poseidon } from 'snarkyjs';
 
-interface GRINPaymentProof {
+export interface GRINPaymentProof {
   amount: string;
   excess: string;
   recipient_address: string;
   recipient_sig: string;
   sender_address: string;
   sender_sig: string;
+}
+
+export interface ResponseSignature {
+  r: string;
+  s: string;
+}
+
+export interface Response {
+  valid: boolean;
+  signature: ResponseSignature | null;
 }
 
 function Uint8ArrayConcatNumber(arrays: Uint8Array[]): number[] {
@@ -82,4 +92,24 @@ export function grinPaymentProofToCommitment(
 
 export function signCommitment(sk: PrivateKey, commitment: Field): Signature {
   return Signature.create(sk, [commitment]);
+}
+
+export function respondValid(
+  sk: string,
+  payment_proof: GRINPaymentProof
+): Response {
+  const commitment: Field = grinPaymentProofToCommitment(payment_proof);
+  const _sk: PrivateKey = PrivateKey.fromBase58(sk);
+  const signature: Signature = signCommitment(_sk, commitment);
+  return {
+    valid: true,
+    signature: signature.toJSON(),
+  };
+}
+
+export function respondInvalid(): Response {
+  return {
+    valid: false,
+    signature: null,
+  };
 }
