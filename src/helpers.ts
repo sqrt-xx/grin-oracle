@@ -2,6 +2,15 @@ import bech32 from 'bech32-buffer';
 
 import { Field, Signature, PrivateKey, Poseidon } from 'snarkyjs';
 
+interface GRINPaymentProof {
+  amount: string;
+  excess: string;
+  recipient_address: string;
+  recipient_sig: string;
+  sender_address: string;
+  sender_sig: string;
+}
+
 function Uint8ArrayConcatNumber(arrays: Uint8Array[]): number[] {
   let t: number[] = [];
   for (let j = 0; j < arrays.length; ++j) {
@@ -22,32 +31,30 @@ export function grinAddressToUint8Array(grin_address: string): Uint8Array {
 }
 
 export function grinPaymentProofToCommitment(
-  amount: string,
-  excess: string,
-  recipient_address: string,
-  recipient_sig: string,
-  sender_address: string,
-  sender_sig: string
+  payment_proof: GRINPaymentProof
 ): Field {
   const _amount: Uint8Array = new Uint8Array(
     Buffer.from(
-      parseInt(amount)
+      parseInt(payment_proof['amount'])
         .toString(16)
         .padStart(2 * 8, '00'),
       'hex'
     )
   );
   const _excess: Uint8Array = new Uint8Array(
-    Buffer.from(excess.padStart(2 * 33, '00'), 'hex')
+    Buffer.from(payment_proof['excess'].padStart(2 * 33, '00'), 'hex')
   );
-  const _recipient_address: Uint8Array =
-    grinAddressToUint8Array(recipient_address);
+  const _recipient_address: Uint8Array = grinAddressToUint8Array(
+    payment_proof['recipient_address']
+  );
   const _recipient_sig: Uint8Array = new Uint8Array(
-    Buffer.from(recipient_sig.padStart(2 * 64, '00'), 'hex')
+    Buffer.from(payment_proof['recipient_sig'].padStart(2 * 64, '00'), 'hex')
   );
-  const _sender_address: Uint8Array = grinAddressToUint8Array(sender_address);
+  const _sender_address: Uint8Array = grinAddressToUint8Array(
+    payment_proof['sender_address']
+  );
   const _sender_sig: Uint8Array = new Uint8Array(
-    Buffer.from(sender_sig.padStart(2 * 64, '00'), 'hex')
+    Buffer.from(payment_proof['sender_sig'].padStart(2 * 64, '00'), 'hex')
   );
 
   const proof_payload: number[] = Uint8ArrayConcatNumber([
