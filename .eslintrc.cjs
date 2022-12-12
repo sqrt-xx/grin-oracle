@@ -5,6 +5,7 @@ module.exports = {
     node: true,
     jest: true,
   },
+  ignorePatterns: ['*.md'],
   extends: ['eslint:recommended', 'plugin:snarkyjs/recommended'],
   parser: '@typescript-eslint/parser',
   parserOptions: {
