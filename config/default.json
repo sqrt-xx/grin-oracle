@@ -1,0 +1,8 @@
+{
+  "grin_wallet_host": "127.0.0.1",
+  "grin_wallet_port": 3420,
+  "grin_wallet_password": "",
+  "grin_api_user": "grin",
+  "grin_api_secret": "5oXxcBmgPTusKkcmNcbJ",
+  "signer_sk": "EKFcGigWJjpwGfdUry1wr7abZwrHJw63HFLTyirVcdrewDskjTUL"
+}
