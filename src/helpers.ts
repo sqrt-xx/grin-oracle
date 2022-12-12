@@ -40,65 +40,83 @@ export function grinAddressToUint8Array(grin_address: string): Uint8Array {
   return new Uint8Array(Buffer.from(decoded_hex.padStart(2 * 32, '00'), 'hex'));
 }
 
-export function grinPaymentProofToCommitment(
-  payment_proof: GRINPaymentProof
-): Field {
-  const _amount: Uint8Array = new Uint8Array(
-    Buffer.from(
-      parseInt(payment_proof['amount'])
-        .toString(16)
-        .padStart(2 * 8, '00'),
-      'hex'
-    )
+export function getGRINKernelCommitment(kernel_hex: string): Field {
+  const decoded: Uint8Array = new Uint8Array(
+    Buffer.from(kernel_hex.padStart(2 * 33, '00'), 'hex')
   );
-  const _excess: Uint8Array = new Uint8Array(
-    Buffer.from(payment_proof['excess'].padStart(2 * 33, '00'), 'hex')
-  );
-  const _recipient_address: Uint8Array = grinAddressToUint8Array(
-    payment_proof['recipient_address']
-  );
-  const _recipient_sig: Uint8Array = new Uint8Array(
-    Buffer.from(payment_proof['recipient_sig'].padStart(2 * 64, '00'), 'hex')
-  );
-  const _sender_address: Uint8Array = grinAddressToUint8Array(
-    payment_proof['sender_address']
-  );
-  const _sender_sig: Uint8Array = new Uint8Array(
-    Buffer.from(payment_proof['sender_sig'].padStart(2 * 64, '00'), 'hex')
-  );
+  const numbers: number[] = Uint8ArrayConcatNumber([decoded]);
 
-  const proof_payload: number[] = Uint8ArrayConcatNumber([
-    _amount,
-    _excess,
-    _recipient_address,
-    _recipient_sig,
-    _sender_address,
-    _sender_sig,
-  ]);
+  // split it into two fields, first takes first 16 bytes, second takes next 17
+  const member_1: Field = Field.fromBytes(numbers.slice(0, 16));
+  const member_2: Field = Field.fromBytes(numbers.slice(16, 33));
 
-  const payload_fields: Field[] = [
-    Field.fromBytes(proof_payload.slice(0, 31)),
-    Field.fromBytes(proof_payload.slice(31, 62)),
-    Field.fromBytes(proof_payload.slice(62, 93)),
-    Field.fromBytes(proof_payload.slice(93, 124)),
-    Field.fromBytes(proof_payload.slice(124, 155)),
-    Field.fromBytes(proof_payload.slice(155, 186)),
-    Field.fromBytes(proof_payload.slice(186, 217)),
-    Field.fromBytes(proof_payload.slice(217, 233)),
-  ];
-
-  return Poseidon.hash(payload_fields);
+  // compute the commitment field using the Poseidon hash
+  return Poseidon.hash([member_1, member_2]);
 }
 
-export function signCommitment(sk: PrivateKey, commitment: Field): Signature {
-  return Signature.create(sk, [commitment]);
+export function getGRINSignatureCommitment(signature_hex: string): Field {
+  const decoded: Uint8Array = new Uint8Array(
+    Buffer.from(signature_hex.padStart(2 * 64, '00'), 'hex')
+  );
+  const numbers: number[] = Uint8ArrayConcatNumber([decoded]);
+
+  // split it into three fields,
+  const member_1: Field = Field.fromBytes(numbers.slice(0, 21));
+  const member_2: Field = Field.fromBytes(numbers.slice(21, 42));
+  const member_3: Field = Field.fromBytes(numbers.slice(42, 64));
+
+  // compute the commitment field using the Poseidon hash
+  return Poseidon.hash([member_1, member_2, member_3]);
+}
+
+export function getGRINAddressCommitment(grin_address: string): Field {
+  const decoded: Uint8Array = grinAddressToUint8Array(grin_address);
+  const numbers: number[] = Uint8ArrayConcatNumber([decoded]);
+
+  // split it into two fields
+  const member_1: Field = Field.fromBytes(numbers.slice(0, 16));
+  const member_2: Field = Field.fromBytes(numbers.slice(16, 32));
+
+  // compute the commitment field using the Poseidon hash
+  return Poseidon.hash([member_1, member_2]);
+}
+
+export function grinPaymentProofToCommitment(
+  payment_proof: GRINPaymentProof
+): Field[] {
+  const amount: Field = new Field(parseInt(payment_proof['amount']));
+  const excess: Field = getGRINKernelCommitment(payment_proof['excess']);
+  const recipient_address: Field = getGRINAddressCommitment(
+    payment_proof['recipient_address']
+  );
+  const recipient_sig: Field = getGRINSignatureCommitment(
+    payment_proof['recipient_sig']
+  );
+  const sender_address: Field = getGRINAddressCommitment(
+    payment_proof['sender_address']
+  );
+  const sender_sig: Field = getGRINSignatureCommitment(
+    payment_proof['sender_sig']
+  );
+  return [
+    amount,
+    excess,
+    recipient_address,
+    recipient_sig,
+    sender_address,
+    sender_sig,
+  ];
+}
+
+export function signCommitment(sk: PrivateKey, commitment: Field[]): Signature {
+  return Signature.create(sk, commitment);
 }
 
 export function respondValid(
   sk: string,
   payment_proof: GRINPaymentProof
 ): Response {
-  const commitment: Field = grinPaymentProofToCommitment(payment_proof);
+  const commitment: Field[] = grinPaymentProofToCommitment(payment_proof);
   const _sk: PrivateKey = PrivateKey.fromBase58(sk);
   const signature: Signature = signCommitment(_sk, commitment);
   return {

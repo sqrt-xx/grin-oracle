@@ -37,16 +37,35 @@ describe('GRINOracle', () => {
   let deployerAccount: PrivateKey,
     zkAppAddress: PublicKey,
     zkAppPrivateKey: PrivateKey;
-  let grin_payment_proof_commitment: Field;
+  let grin_amount: Field,
+    grin_excess: Field,
+    grin_recipient_address: Field,
+    grin_recipient_sig: Field,
+    grin_sender_address: Field,
+    grin_sender_sig: Field;
   let pk: PublicKey;
 
   beforeAll(async () => {
     await isReady;
     if (proofsEnabled) GRINOracle.compile();
 
-    grin_payment_proof_commitment = new Field(
-      '16798322553783080360949380696706946417861502541300893652149661423092642133041'
+    grin_amount = new Field(100000000);
+    grin_excess = new Field(
+      '28783455613069620014840473251348557738933380647839115000599866215832096325235'
     );
+    grin_recipient_address = new Field(
+      '3689974313220076055418846131063705776311096184579946919306434732455896611888'
+    );
+    grin_recipient_sig = new Field(
+      '4570389341152650111395746081201642870012863223030121300802058945710386057856'
+    );
+    grin_sender_address = new Field(
+      '9620937679898968338525645350950688097144501894608865205938790361282342044747'
+    );
+    grin_sender_sig = new Field(
+      '22157734480512192946050221127298174172172193081358271971604604457294184033840'
+    );
+
     pk = PublicKey.fromBase58(
       'B62qmPgPfdtJR1p622QVgK4ZyJyWRXmDcZeC8BoAKtTVbRZPHwpiF6Z'
     );
@@ -96,19 +115,27 @@ describe('GRINOracle', () => {
     await localDeploy(zkAppInstance, zkAppPrivateKey, deployerAccount, pk);
 
     const signature = Signature.fromJSON({
-      r: '5547642720567330615899727612212559813520476864559112681613197169414763846211',
-      s: '23860512247161351780731386873840202294152592802961048695255776109680887398579',
+      r: '9942534691202104965893609053142274997847947625488210468303249301192395204530',
+      s: '22473842449465986932563778600771717397074160355636519540628490356855887449046',
     });
 
     const txn = await Mina.transaction(deployerAccount, () => {
-      zkAppInstance.verify(grin_payment_proof_commitment, signature);
+      zkAppInstance.verify(
+        grin_amount,
+        grin_excess,
+        grin_recipient_address,
+        grin_recipient_sig,
+        grin_sender_address,
+        grin_sender_sig,
+        signature
+      );
     });
     await txn.prove();
     await txn.send();
 
     const events = await zkAppInstance.fetchEvents();
     const verifiedEventValue = events[0].event.toFields(null)[0];
-    expect(verifiedEventValue).toEqual(grin_payment_proof_commitment);
+    expect(verifiedEventValue).toEqual(grin_excess);
   });
 
   it('throws an error if the provided signature is invalid', async () => {
@@ -122,7 +149,15 @@ describe('GRINOracle', () => {
 
     expect(async () => {
       await Mina.transaction(deployerAccount, () => {
-        zkAppInstance.verify(grin_payment_proof_commitment, signature);
+        zkAppInstance.verify(
+          grin_amount,
+          grin_excess,
+          grin_recipient_address,
+          grin_recipient_sig,
+          grin_sender_address,
+          grin_sender_sig,
+          signature
+        );
       });
     }).rejects;
   });
