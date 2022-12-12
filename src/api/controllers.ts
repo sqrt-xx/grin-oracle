@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 
-import { respondValid } from '../helpers';
+import { respondValid, respondInvalid } from '../helpers';
 import { JSONRequestEncrypted, initSecure } from './grin_wallet';
 
 const endpointVerify = async (req: Request, res: Response) => {
@@ -27,7 +27,6 @@ const endpointVerify = async (req: Request, res: Response) => {
     grin_api_user,
     grin_api_secret
   );
-  console.log(shared_key);
 
   let response = await new JSONRequestEncrypted(
     1,
@@ -41,7 +40,6 @@ const endpointVerify = async (req: Request, res: Response) => {
     grin_api_user,
     grin_api_secret
   ).send(shared_key);
-  console.log(response);
   const token = response.result.Ok;
 
   response = await new JSONRequestEncrypted(
@@ -63,7 +61,9 @@ const endpointVerify = async (req: Request, res: Response) => {
     grin_api_user,
     grin_api_secret
   ).send(shared_key);
-  console.log(response);
+  if (response.error) {
+    return res.status(200).json(respondInvalid());
+  }
 
   // respond
   return res.status(200).json(
