@@ -12,6 +12,30 @@ This project takes advantage of [wallet Owner API V3 client](https://github.com/
 
 ## Instructions
 
+### Deploying the Oracle
+
+It comes with few scripts that will deploy it for you and generate its first key. Remember it is not like the [tutorial 7 Oracle](https://docs.minaprotocol.com/zkapps/tutorials/oracle), it does not have a hard coded key so needs an extra transaction to set it!
+
+```sh
+zk config
+```
+
+this creates an account for you. Make sure to use the faucet to fund it as explained in [tutorial 3](https://docs.minaprotocol.com/zkapps/tutorials/deploying-to-a-network).
+
+Then run
+
+```sh
+npm run build
+```
+
+and launch the script
+
+```sh
+node build/src/main.js berkeley
+```
+
+it will show you the oracle zkApp address and signing key that was set.
+
 ### Running your signer server in dev mode
 
 #### Setting up the GRIN wallet
