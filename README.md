@@ -10,6 +10,10 @@ An oracle is a bridge between external world and blockchain. A GRIN payment proo
 
 This project takes advantage of [wallet Owner API V3 client](https://github.com/mimblewimble/grin-wallet/blob/master/doc/samples/v3_api_node/src/index.js) by [XiaoJay](https://github.com/xiaojay).
 
+## UI
+
+Deployed to https://grin-oracle.sqrtxx.com/ and it is super buggy... But I promise I will fix it. Repository for it is here: https://github.com/sqrt-xx/grin-oracle-ui
+
 ## Instructions
 
 ### Deploying the Oracle
